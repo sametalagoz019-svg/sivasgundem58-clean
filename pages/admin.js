@@ -14,7 +14,19 @@ export default function Admin() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  const addNews = () => {
+const addNews = async () => {
+  const { error } = await supabase
+    .from('news')
+    .insert([{ title, content }]);
+
+  if (error) {
+    alert("Hata var");
+  } else {
+    alert("Haber eklendi!");
+    setTitle("");
+    setContent("");
+  }
+};
     let old = JSON.parse(localStorage.getItem("news") || "[]");
 
     old.unshift({
