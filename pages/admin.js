@@ -1,45 +1,53 @@
-import { supabase } from "../lib/supabase";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { supabase } from "../lib/supabase";
 
 export default function Admin() {
   const router = useRouter();
 
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [news, setNews] = useState([]);
+
+  // LOGIN + HABER ÇEKME
   useEffect(() => {
     if (localStorage.getItem("auth") !== "ok") {
       router.push("/login");
+    } else {
+      loadNews();
     }
   }, []);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  // HABERLERİ GETİR
+  const loadNews = async () => {
+    const { data } = await supabase
+      .from("news")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-const addNews = async () => {
-  const { error } = await supabase
-    .from('news')
-    .insert([{ title, content }]);
+    setNews(data || []);
+  };
 
-  if (error) {
-    alert("Hata var");
-  } else {
-    alert("Haber eklendi!");
-    setTitle("");
-    setContent("");
-  }
-};
-    let old = JSON.parse(localStorage.getItem("news") || "[]");
+  // HABER EKLE
+  const addNews = async () => {
+    const { error } = await supabase
+      .from("news")
+      .insert([{ title, content }]);
 
-    old.unshift({
-      title,
-      content,
-      date: new Date().toLocaleString()
-    });
+    if (error) {
+      alert("Hata var");
+    } else {
+      alert("Haber eklendi!");
+      setTitle("");
+      setContent("");
+      loadNews();
+    }
+  };
 
-    localStorage.setItem("news", JSON.stringify(old));
-
-    alert("Haber eklendi!");
-    setTitle("");
-    setContent("");
+  // HABER SİL
+  const deleteNews = async (id) => {
+    await supabase.from("news").delete().eq("id", id);
+    loadNews();
   };
 
   return (
@@ -63,6 +71,18 @@ const addNews = async () => {
       <br /><br />
 
       <button onClick={addNews}>Haber Ekle</button>
+
+      <hr />
+
+      <h2>Haberler</h2>
+
+      {news.map((item) => (
+        <div key={item.id} style={{ marginBottom: 15 }}>
+          <b>{item.title}</b>
+          <br />
+          <button onClick={() => deleteNews(item.id)}>Sil</button>
+        </div>
+      ))}
     </div>
   );
 }
